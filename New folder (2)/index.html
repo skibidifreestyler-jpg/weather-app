@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Weather App Pro</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+body{
+min-height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+transition:1s;
+color:white;
+overflow:hidden;
+}
+body.clear{background:linear-gradient(135deg,#38bdf8,#0ea5e9,#bae6fd);}
+body.clouds{background:linear-gradient(135deg,#334155,#475569,#64748b);}
+body.rain{background:linear-gradient(135deg,#0f172a,#1e293b,#334155);}
+body.snow{background:linear-gradient(135deg,#e2e8f0,#cbd5e1,#94a3b8);color:#0f172a;}
+
+.container{max-width:900px;width:100%;}
+.weather-app{
+padding:30px;
+backdrop-filter:blur(25px);
+background:rgba(255,255,255,0.08);
+border-radius:25px;
+border:1px solid rgba(255,255,255,0.15);
+animation:fadeIn 0.5s;
+}
+
+.search-box{display:flex;gap:10px;margin-bottom:20px;}
+.search-box input{flex:1;padding:15px;border-radius:15px;border:none;outline:none;}
+.search-box button{padding:15px;border:none;border-radius:15px;background:#38bdf8;color:white;cursor:pointer;}
+
+.current-weather{display:flex;justify-content:space-between;align-items:center;}
+.weather-info h1{font-size:4rem;}
+.weather-info h2{font-size:2rem;}
+.weather-icon{font-size:5rem;animation:float 3s infinite;}
+
+.details{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px;}
+.detail-card{padding:15px;background:rgba(255,255,255,0.08);border-radius:15px;text-align:center;}
+
+.forecast{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;}
+.forecast-card{padding:15px;background:rgba(255,255,255,0.08);border-radius:15px;text-align:center;transition:.3s;}
+.forecast-card:hover{transform:scale(1.05);}
+
+#loading,#error{text-align:center;margin-top:10px;}
+#error{color:#f87171;}
+#loading{color:#93c5fd;}
+
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes float{0%{transform:translateY(0)}50%{transform:translateY(-10px)}100%{transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<div class="container">
+<div class="weather-app">
+
+<div class="search-box">
+<input id="cityInput" placeholder="Search city...">
+<button id="searchBtn">Search</button>
+</div>
+
+<div id="loading" style="display:none">Loading...</div>
+<div id="error" style="display:none"></div>
+
+<div id="weatherContent">
+
+<div class="current-weather">
+<div class="weather-info">
+<h2 id="city">---</h2>
+<h1 id="temp">--</h1>
+<p id="condition">---</p>
+</div>
+<div class="weather-icon" id="mainIcon">🌍</div>
+</div>
+
+<div class="details">
+<div class="detail-card">Humidity<p id="humidity">--</p></div>
+<div class="detail-card">Wind<p id="wind">--</p></div>
+<div class="detail-card">Feels<p id="feels">--</p></div>
+</div>
+
+<h3>5 Day Forecast</h3>
+<div id="forecast" class="forecast"></div>
+
+<h3>Hourly</h3>
+<div id="hourly" class="forecast"></div>
+
+</div>
+</div>
+</div>
+
+<script>
+// ELEMENTS FIXED
+const cityEl=document.getElementById("city");
+const temp=document.getElementById("temp");
+const condition=document.getElementById("condition");
+const humidity=document.getElementById("humidity");
+const wind=document.getElementById("wind");
+const feels=document.getElementById("feels");
+const forecast=document.getElementById("forecast");
+const hourly=document.getElementById("hourly");
+const mainIcon=document.getElementById("mainIcon");
+
+const btn=document.getElementById("searchBtn");
+const loading=document.getElementById("loading");
+const error=document.getElementById("error");
+
+btn.onclick=async()=>{
+const city=document.getElementById("cityInput").value;
+if(!city)return;
+
+loading.style.display="block";
+error.style.display="none";
+
+try{
+const res=await fetch(`http://127.0.0.1:5000/weather?city=${city}`);
+const data=await res.json();
+
+if(data.error)throw new Error(data.error);
+
+cityEl.textContent=data.city;
+temp.textContent=data.temperature+"°C";
+condition.textContent=data.weather;
+humidity.textContent=data.humidity+"%";
+wind.textContent=data.wind+" km/h";
+feels.textContent=data.feels_like+"°C";
+
+const icons={Clear:"☀️",Clouds:"☁️",Rain:"🌧️",Snow:"❄️"};
+mainIcon.textContent=icons[data.weather]||"🌍";
+
+// theme
+const body=document.body;
+body.className="";
+if(data.weather=="Clear")body.classList.add("clear");
+else if(data.weather=="Clouds")body.classList.add("clouds");
+else if(data.weather=="Rain")body.classList.add("rain");
+else if(data.weather=="Snow")body.classList.add("snow");
+
+forecast.innerHTML="";
+(data.forecast||[]).forEach(f=>{
+forecast.innerHTML+=`<div class='forecast-card'><b>${f.day}</b><br>${icons[f.weather]||"🌤️"}<br>${f.temp}°C</div>`;
+});
+
+hourly.innerHTML="";
+(data.hourly||[]).forEach(h=>{
+hourly.innerHTML+=`<div class='forecast-card'><b>${h.time}</b><br>🕒<br>${h.temp}°C</div>`;
+});
+
+}catch(e){
+error.style.display="block";
+error.textContent=e.message;
+}
+loading.style.display="none";
+};
+</script>
+</body>
+</html>
+
+
